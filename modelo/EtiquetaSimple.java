@@ -7,6 +7,6 @@ public class EtiquetaSimple extends EtiquetaHTML {
 
     @Override
     public String generarHTML() {
-        return "<" + nombre + generarAtributos() + ">";
+        return "<" + nombre + generarAtributos() + " />\n";
     }
 }

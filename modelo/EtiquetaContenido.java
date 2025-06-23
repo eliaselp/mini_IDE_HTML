@@ -19,6 +19,10 @@ public abstract class EtiquetaContenido extends EtiquetaHTML {
         return false;
     }
 
+    public boolean eliminarEtiquetaHija(EtiquetaHTML etiqueta) {
+        return etiquetasHijas.remove(etiqueta);
+    }
+
     public List<EtiquetaHTML> getEtiquetasHijas() {
         return new ArrayList<>(etiquetasHijas);
     }
@@ -31,5 +35,12 @@ public abstract class EtiquetaContenido extends EtiquetaHTML {
             sb.append(etiqueta.generarHTML());
         }
         return sb.toString();
+    }
+
+    @Override
+    public String generarHTML() {
+        return "<" + nombre + generarAtributos() + ">\n" + 
+               generarContenido() + 
+               "</" + nombre + ">\n";
     }
 }

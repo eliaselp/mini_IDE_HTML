@@ -16,18 +16,20 @@ import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
 
 public class PanelAtributos extends JPanel {
     private final EditorController controller;
     private final JTable tablaAtributos;
     private final AtributosTableModel modeloTabla;
+    private EtiquetaHTML etiquetaActual;
     
     public PanelAtributos(EditorController controller) {
         this.controller = controller;
         this.modeloTabla = new AtributosTableModel(new ArrayList<>());
         this.tablaAtributos = new JTable(modeloTabla);
-        
         configurarPanel();
+        actualizarEtiquetaActual();
     }
     
     private void configurarPanel() {
@@ -55,24 +57,48 @@ public class PanelAtributos extends JPanel {
     private void agregarAtributo(ActionEvent e) {
         String nombre = JOptionPane.showInputDialog(this, "Nombre del atributo:");
         if (nombre != null && !nombre.trim().isEmpty()) {
+            if (etiquetaActual != null && etiquetaActual.tieneAtributo(nombre)) {
+                JOptionPane.showMessageDialog(this, 
+                    "El atributo ya existe", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            
             String valor = JOptionPane.showInputDialog(this, "Valor del atributo:");
-            modeloTabla.agregarAtributo(new Atributo(nombre, valor));
+            Atributo nuevo = new Atributo(nombre, valor != null ? valor : "");
+            controller.agregarAtributoActual(nuevo);
+            modeloTabla.agregarAtributo(nuevo);
         }
     }
     
     private void eliminarAtributo(ActionEvent e) {
         int fila = tablaAtributos.getSelectedRow();
         if (fila >= 0) {
+            Atributo attr = modeloTabla.getAtributo(fila);
+            controller.eliminarAtributoActual(attr.getNombre());
             modeloTabla.eliminarAtributo(fila);
         }
     }
     
     public void actualizarAtributos(EtiquetaHTML etiqueta) {
+        this.etiquetaActual = etiqueta;
         if (etiqueta != null) {
             modeloTabla.setAtributos(new ArrayList<>(etiqueta.getAtributos()));
         } else {
             modeloTabla.setAtributos(new ArrayList<>());
         }
+    }
+    
+    public void etiquetaSeleccionadaCambiada() {
+        SwingUtilities.invokeLater(() -> {
+            actualizarEtiquetaActual();
+            tablaAtributos.revalidate();
+            tablaAtributos.repaint();
+        });
+    }
+    
+    private void actualizarEtiquetaActual() {
+        this.etiquetaActual = controller.getEtiquetaActual();
+        actualizarAtributos(etiquetaActual);
     }
     
     private class AtributosTableModel extends AbstractTableModel {
@@ -97,6 +123,13 @@ public class PanelAtributos extends JPanel {
                 atributos.remove(fila);
                 fireTableRowsDeleted(fila, fila);
             }
+        }
+        
+        public Atributo getAtributo(int fila) {
+            if (fila >= 0 && fila < atributos.size()) {
+                return atributos.get(fila);
+            }
+            return null;
         }
         
         @Override
@@ -133,11 +166,19 @@ public class PanelAtributos extends JPanel {
             if (rowIndex >= 0 && rowIndex < atributos.size() && aValue != null) {
                 Atributo attr = atributos.get(rowIndex);
                 if (columnIndex == 0) {
-                    attr = new Atributo(aValue.toString(), attr.getValor());
+                    String nuevoNombre = aValue.toString();
+                    if (!attr.getNombre().equals(nuevoNombre)) {
+                        controller.eliminarAtributoActual(attr.getNombre());
+                        attr.setNombre(nuevoNombre);
+                        controller.agregarAtributoActual(attr);
+                    }
                 } else {
-                    attr = new Atributo(attr.getNombre(), aValue.toString());
+                    String nuevoValor = aValue.toString();
+                    if (!attr.getValor().equals(nuevoValor)) {
+                        attr.setValor(nuevoValor);
+                        controller.modificarAtributoActual(attr);
+                    }
                 }
-                atributos.set(rowIndex, attr);
                 fireTableCellUpdated(rowIndex, columnIndex);
             }
         }

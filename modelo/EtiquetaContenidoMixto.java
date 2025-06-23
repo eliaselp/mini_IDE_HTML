@@ -23,8 +23,8 @@ public class EtiquetaContenidoMixto extends EtiquetaContenido {
 
     @Override
     public String generarHTML() {
-        return "<" + nombre + generarAtributos() + ">" + 
+        return "<" + nombre + generarAtributos() + ">\n" + 
                contenidoTexto + generarContenido() + 
-               "</" + nombre + ">";
+               "</" + nombre + ">\n";
     }
 }

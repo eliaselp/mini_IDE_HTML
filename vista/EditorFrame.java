@@ -21,11 +21,13 @@ import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
 import javax.swing.BorderFactory;
-import javax.swing.UIManager;
+import javax.swing.SwingUtilities;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import modelo.EtiquetaHTML;
 import modelo.EtiquetaContenidoMixto;
 
-public class EditorFrame extends JFrame {
+public class EditorFrame extends JFrame implements ChangeListener {
     private final EditorController controller;
     private final JTextArea areaHTML;
     private final JLabel lblEstado;
@@ -44,6 +46,8 @@ public class EditorFrame extends JFrame {
         configurarVentana();
         initComponentes();
         actualizarVista();
+        
+        controller.addChangeListener(this);
     }
     
     private void configurarVentana() {
@@ -123,18 +127,23 @@ public class EditorFrame extends JFrame {
     }
     
     public void actualizarVista() {
-        areaHTML.setText(controller.getHTML());
-        lblEstado.setText("Etiqueta actual: " + controller.getNombreEtiquetaActual());
-        
-        EtiquetaHTML etiquetaActual = controller.getEtiquetaActual();
-        if (etiquetaActual instanceof EtiquetaContenidoMixto) {
-            txtContenido.setText(((EtiquetaContenidoMixto)etiquetaActual).getContenidoTexto());
-        } else {
-            txtContenido.setText("");
-        }
-        
-        panelAtributos.actualizarAtributos(etiquetaActual);
-        btnFinalizar.setEnabled(controller.puedeFinalizarEtiqueta());
+        SwingUtilities.invokeLater(() -> {
+            areaHTML.setText(controller.getHTML());
+            lblEstado.setText("Etiqueta actual: " + controller.getNombreEtiquetaActual());
+            
+            EtiquetaHTML etiquetaActual = controller.getEtiquetaActual();
+            if (etiquetaActual instanceof EtiquetaContenidoMixto) {
+                txtContenido.setText(((EtiquetaContenidoMixto)etiquetaActual).getContenidoTexto());
+            } else {
+                txtContenido.setText("");
+            }
+            
+            panelAtributos.actualizarAtributos(etiquetaActual);
+            btnFinalizar.setEnabled(controller.puedeFinalizarEtiqueta());
+            
+            areaHTML.revalidate();
+            areaHTML.repaint();
+        });
     }
     
     private void aplicarContenido(ActionEvent e) {
@@ -156,8 +165,8 @@ public class EditorFrame extends JFrame {
             if (!filePath.toLowerCase().endsWith(".html")) {
                 filePath += ".html";
             }
-            
-            if (controller.guardarDocumento(filePath)) {
+            String contenido = controller.getHTML();
+            if (controller.guardarDocumento(filePath, contenido)) {
                 JOptionPane.showMessageDialog(this, 
                     "Documento guardado exitosamente en:\n" + filePath, 
                     "Éxito", JOptionPane.INFORMATION_MESSAGE);
@@ -167,5 +176,10 @@ public class EditorFrame extends JFrame {
                     "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
+    }
+
+    @Override
+    public void stateChanged(ChangeEvent e) {
+        actualizarVista();
     }
 }

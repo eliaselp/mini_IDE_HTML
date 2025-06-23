@@ -21,8 +21,8 @@ public class EtiquetaContenidoPuro extends EtiquetaContenido {
 
     @Override
     public String generarHTML() {
-        return "<" + nombre + generarAtributos() + ">" + 
+        return "<" + nombre + generarAtributos() + ">\n" + 
                generarContenido() + 
-               "</" + nombre + ">";
+               "</" + nombre + ">\n";
     }
 }
